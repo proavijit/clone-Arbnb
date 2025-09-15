@@ -28,14 +28,14 @@ const Navbar = () => {
     <nav className="w-full shadow-sm bg-gradient-to-b from-transparent to-[#F7F7F7]">
       <div className="flex flex-col md:flex-row items-center justify-between px-4 md:px-8 min-h-[52px]">
         {/* Left - Logo */}
-        <div className="text-xxl font-bold py-2 md:py-0">Logo</div>
+        <div className="text-3xl font-bold py-2 md:py-0 text-[#E95C76]">Arbnb</div>
 
         {/* Center - Tabs */}
         <div className="flex flex-col md:flex-row items-center w-full md:w-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
   {/* Tabs at the top center */}
   <div className="flex justify-center w-full mt-5 ">
-    <TabsList className="flex gap-3 bg-secondary w-auto">
+    <TabsList className="flex gap-3 bg-[#f5f0f0] w-auto">
       <TabsTrigger value="home">Home</TabsTrigger>
       <TabsTrigger value="experience">Experiences</TabsTrigger>
       <TabsTrigger value="services">Services</TabsTrigger>

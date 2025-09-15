@@ -51,7 +51,7 @@
 :root {
   --radius: 1rem; /* Airbnb-style rounded corners */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(82% 0.07 275);
+  --card-foreground: #352c2d;
   --popover: oklch(1 0 0);
   
     /* location-font color */
@@ -65,7 +65,7 @@
   --muted-foreground: oklch(55% 0.046 257);
   --accent: oklch(97% 0.007 248);
   --accent-foreground: oklch(21% 0.042 266);
-  --destructive: oklch(57% 0.245 27);
+  --destructive: #E95C76;
   --border: oklch(93% 0.013 256);
   --input: oklch(93% 0.013 256);
   --ring: oklch(70% 0.04 257);
@@ -108,8 +108,8 @@
 
 
 :root {
-  --primary: #FF385C;
-  --primary-dark: #FF385C;
+  --primary: #E95C76;
+  --primary-dark: #E95C76;
   --card: #ffffff;
   --popover-bg: #f9fafb;
   --muted-border: #e5e7eb;
@@ -140,6 +140,7 @@
 .search-popover .flex.items-center {
   transition: background-color 0.2s;
 }
+
 
 
 
