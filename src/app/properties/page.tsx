@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { MapPin, Bed, Bath } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import type { LatLngExpression } from "leaflet";
-
+import Image from "next/image";
+ import L from "leaflet";
 // Dynamically import react-leaflet components (SSR safe)
 const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer), { ssr: false });
 const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer), { ssr: false });
@@ -23,7 +24,7 @@ const selectedMarkerSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" he
 // Custom marker icon generator (client-only)
 const createCustomMarker = (svg: string) => {
   if (typeof window === "undefined") return null;
-  const L = require("leaflet");
+
   return new L.Icon({
     iconUrl: `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`,
     iconSize: [32, 32],
@@ -134,11 +135,13 @@ export default function SearchResultsWithMap() {
             }}
           >
             <CardContent className="p-0 flex">
-              <img
-                src={property.images[0] || "https://placehold.co/600x400.png"}
-                alt={property.name}
-                className="w-40 h-32 object-cover rounded-l-lg"
-              />
+          <Image
+  src={property.images[0] || "https://placehold.co/600x400.png"}
+  alt={property.name}
+  width={160}   // w-40 = 160px
+  height={128}  // h-32 = 128px
+  className="object-cover rounded-l-lg"
+/>
               <div className="flex-1 p-4">
                 <CardTitle className="text-base md:text-lg font-semibold truncate">{property.name}</CardTitle>
                 <CardDescription className="text-sm text-gray-500 flex items-center mt-1 space-x-2">
