@@ -13,6 +13,8 @@ import property1 from "@/assets/property1.jpg";
 import property2 from "@/assets/property2.jpg";
 import property3 from "@/assets/property3.jpg";
 
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
 interface Property {
   _id: string;
   name: string;
@@ -38,7 +40,7 @@ export default function PropertyPage() {
     const fetchProperty = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`http://localhost:5000/api/properties/${id}`);
+        const res = await axios.get(`${apiUrl}/api/properties/${id}`);
         setProperty(res.data);
       } catch (err) {
         console.error(err);

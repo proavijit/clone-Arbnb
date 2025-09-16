@@ -31,16 +31,22 @@ const PropertyList = () => {
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const apiUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/properties";
-        const response = await fetch(apiUrl);
+        const baseUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        const response = await fetch(`${baseUrl}/api/properties`);
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
+
         const data: Property[] = await response.json();
         setProperties(data);
-      } catch (e: any) {
-        setError(e.message);
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("An unknown error occurred");
+        }
       } finally {
         setLoading(false);
       }
@@ -57,8 +63,6 @@ const PropertyList = () => {
       } else {
         newFavorites.add(propertyId);
       }
-      // Persist to localStorage (uncomment to enable)
-      // localStorage.setItem("favorites", JSON.stringify([...newFavorites]));
       return newFavorites;
     });
   };
@@ -94,7 +98,9 @@ const PropertyList = () => {
                 src={property.images?.[0] || "/placeholder-image.jpg"}
                 alt={property.name || "Property image"}
                 className="w-full h-48 object-cover"
-                onError={(e) => (e.target.src = "/placeholder-image.jpg")}
+                onError={(e) =>
+                  (e.currentTarget.src = "/placeholder-image.jpg")
+                }
               />
               <div className="absolute top-2 right-2">
                 <Button
@@ -111,7 +117,9 @@ const PropertyList = () => {
                   }
                 >
                   <Heart
-                    className={`h-4 w-4 ${favorites.has(property._id) ? "fill-current" : ""}`}
+                    className={`h-4 w-4 ${
+                      favorites.has(property._id) ? "fill-current" : ""
+                    }`}
                   />
                 </Button>
               </div>

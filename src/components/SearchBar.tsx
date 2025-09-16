@@ -32,7 +32,7 @@ const SearchBar = () => {
   const [pets, setPets] = React.useState(0);
 
   const [warning, setWarning] = React.useState("");
-
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   // Increment / Decrement helpers
   const increment = (setter: React.Dispatch<React.SetStateAction<number>>) => setter(prev => prev + 1);
   const decrement = (setter: React.Dispatch<React.SetStateAction<number>>) => setter(prev => (prev > 0 ? prev - 1 : 0));
@@ -44,7 +44,7 @@ const SearchBar = () => {
     const fetchAllLocations = async () => {
       try {
         setLoading(true);
-        const res = await axios.get("http://localhost:5000/api/properties/suggestions?query=");
+       const res = await axios.get(`${apiUrl}/api/properties/suggestions?query=`);
         const data = res.data.length ? res.data : defaultLocations;
         setAllLocations(data);
         setSuggestions(data);
@@ -67,7 +67,7 @@ const SearchBar = () => {
     const delay = setTimeout(async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`http://localhost:5000/api/properties/suggestions?query=${location}`);
+        const res = await axios.get(`${apiUrl}/api/properties/suggestions?query=${location}`);
         setSuggestions(res.data.length ? res.data : []);
       } catch (error) {
         console.error("Failed to fetch suggestions", error);

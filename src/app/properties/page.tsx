@@ -8,29 +8,21 @@ import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/c
 import { Button } from "@/components/ui/button";
 import { MapPin, Bed, Bath } from "lucide-react";
 import "leaflet/dist/leaflet.css";
+import type { LatLngExpression } from "leaflet";
 
-// Dynamically import react-leaflet components to avoid SSR issues
+// Dynamically import react-leaflet components (SSR safe)
 const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer), { ssr: false });
 const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer), { ssr: false });
 const Marker = dynamic(() => import("react-leaflet").then((mod) => mod.Marker), { ssr: false });
 const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), { ssr: false });
 
 // Custom SVG icons for Leaflet markers
-const defaultMarkerSvg = `
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4a90e2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-  <circle cx="12" cy="9" r="2"/>
-</svg>`;
+const defaultMarkerSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4a90e2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2"/></svg>`;
+const selectedMarkerSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2"/></svg>`;
 
-const selectedMarkerSvg = `
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-  <circle cx="12" cy="9" r="2"/>
-</svg>`;
-
-// Custom marker icon generator (only run on client)
+// Custom marker icon generator (client-only)
 const createCustomMarker = (svg: string) => {
-  if (typeof window === "undefined") return null; // Prevent SSR execution
+  if (typeof window === "undefined") return null;
   const L = require("leaflet");
   return new L.Icon({
     iconUrl: `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`,
@@ -59,17 +51,13 @@ export default function SearchResultsWithMap() {
   const [mounted, setMounted] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
 
-  // Memoize marker icons only on client
   const defaultMarkerIcon = useMemo(() => createCustomMarker(defaultMarkerSvg), []);
   const selectedMarkerIcon = useMemo(() => createCustomMarker(selectedMarkerSvg), []);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!mounted) return;
-
     const params = new URLSearchParams(window.location.search);
     const location = params.get("location") || "";
     const checkIn = params.get("checkIn") || "";
@@ -87,14 +75,14 @@ export default function SearchResultsWithMap() {
     const fetchResults = async () => {
       setLoading(true);
       try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
         const payload = {
           location,
           checkIn: checkIn ? new Date(checkIn) : undefined,
           checkOut: checkOut ? new Date(checkOut) : undefined,
           guests: { adults, children, infants, pets },
         };
-
-        const res = await axios.post("http://localhost:5000/api/properties/search", payload);
+        const res = await axios.post(`${apiUrl}/api/properties/search`, payload);
         setResults(res.data);
       } catch (error) {
         console.error("Failed to fetch search results:", error);
@@ -106,7 +94,6 @@ export default function SearchResultsWithMap() {
     fetchResults();
   }, [mounted]);
 
-  // Fix default Leaflet icons only on client
   useEffect(() => {
     if (typeof window === "undefined") return;
     const L = require("leaflet");
@@ -122,8 +109,8 @@ export default function SearchResultsWithMap() {
   if (loading) return <p className="text-center mt-20 text-gray-600">Loading search results...</p>;
   if (!results.length) return <p className="text-center mt-20 text-gray-600">No properties found.</p>;
 
-  // Ensure map is only rendered if results are available
-  const mapCenter =
+  // ✅ Explicitly type mapCenter as LatLngExpression
+  const mapCenter: LatLngExpression =
     selectedProperty?.location.coordinates
       ? [selectedProperty.location.coordinates[1], selectedProperty.location.coordinates[0]]
       : results[0]?.location.coordinates
@@ -132,7 +119,6 @@ export default function SearchResultsWithMap() {
 
   return (
     <div className="flex flex-col md:flex-row h-screen font-sans">
-      {/* Left side: Property list */}
       <div className="md:w-1/2 overflow-y-auto p-4 space-y-4 bg-gray-50 border-r border-gray-200">
         <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 px-2">Search Results</h1>
         {results.map((property) => (
@@ -174,7 +160,6 @@ export default function SearchResultsWithMap() {
         ))}
       </div>
 
-      {/* Right side: Map */}
       <div className="md:w-1/2">
         <MapContainer
           center={mapCenter}
@@ -192,9 +177,7 @@ export default function SearchResultsWithMap() {
               key={property._id}
               position={[property.location.coordinates[1], property.location.coordinates[0]]}
               icon={selectedProperty?._id === property._id ? selectedMarkerIcon : defaultMarkerIcon}
-              eventHandlers={{
-                click: () => setSelectedProperty(property),
-              }}
+              eventHandlers={{ click: () => setSelectedProperty(property) }}
             >
               <Popup>
                 <div className="space-y-1">

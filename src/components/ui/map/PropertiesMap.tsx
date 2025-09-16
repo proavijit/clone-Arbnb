@@ -1,43 +1,82 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import L from "leaflet";
+import dynamic from "next/dynamic";
+import { LatLngExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import createCustomMarker from "@/components/ui/map/CustomMarkerIcon";
 
-// Fix default leaflet marker
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png",
-});
+// Dynamically import react-leaflet components to disable SSR
+const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer), { ssr: false });
+const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer), { ssr: false });
+const Marker = dynamic(() => import("react-leaflet").then((mod) => mod.Marker), { ssr: false });
+const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), { ssr: false });
 
-export default function PropertiesMap({ properties, selectedProperty, setSelectedProperty }) {
+// Define Property interface
+interface Property {
+  _id: string;
+  name: string;
+  pricePerNight: number;
+  location: {
+    name: string;
+    coordinates: [number, number]; // [longitude, latitude]
+  };
+}
+
+// Define props interface
+interface PropertiesMapProps {
+  properties: Property[];
+  selectedProperty: Property | null;
+  setSelectedProperty: (property: Property) => void;
+}
+
+// Fix default Leaflet marker (runs only on client-side)
+if (typeof window !== "undefined") {
+  const L = require("leaflet");
+  delete L.Icon.Default.prototype._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  });
+}
+
+export default function PropertiesMap({ properties, selectedProperty, setSelectedProperty }: PropertiesMapProps) {
   const defaultMarkerIcon = useMemo(() => createCustomMarker("#4a90e2"), []);
   const selectedMarkerIcon = useMemo(() => createCustomMarker("#e74c3c"), []);
 
+  // Default center if no properties or selected property
+  const mapCenter: LatLngExpression =
+    selectedProperty?.location.coordinates
+      ? [selectedProperty.location.coordinates[1], selectedProperty.location.coordinates[0]]
+      : properties[0]?.location.coordinates
+      ? [properties[0].location.coordinates[1], properties[0].location.coordinates[0]]
+      : [23.7916, 90.4079];
+
   return (
     <MapContainer
-      center={selectedProperty?.location.coordinates || [23.7916, 90.4079]}
+      center={mapCenter}
       zoom={selectedProperty ? 15 : 12}
-      key={selectedProperty?._id}
-      scrollWheelZoom
+      scrollWheelZoom={true}
       className="h-full w-full"
     >
-      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      <TileLayer
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      />
       {properties.map((p) => (
         <Marker
           key={p._id}
-          position={p.location.coordinates}
+          position={[p.location.coordinates[1], p.location.coordinates[0]] as LatLngExpression}
           icon={selectedProperty?._id === p._id ? selectedMarkerIcon : defaultMarkerIcon}
           eventHandlers={{ click: () => setSelectedProperty(p) }}
         >
           <Popup>
-            <strong>{p.name}</strong>
-            <p>{p.location.name}</p>
-            <p>৳{p.pricePerNight}/night</p>
+            <div className="space-y-1">
+              <strong className="text-lg font-semibold">{p.name}</strong>
+              <p className="text-sm">{p.location.name}</p>
+              <p className="font-bold">৳{p.pricePerNight}/night</p>
+            </div>
           </Popup>
         </Marker>
       ))}
