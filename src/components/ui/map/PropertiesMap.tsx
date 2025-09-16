@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { LatLngExpression, Icon, IconOptions, DivIcon } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import createCustomMarker from "@/components/ui/map/CustomMarkerIcon";
- import L  from "leaflet";
+
 // Dynamically import react-leaflet components to disable SSR
 const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer), { ssr: false });
 const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer), { ssr: false });
@@ -30,18 +30,21 @@ interface PropertiesMapProps {
   setSelectedProperty: (property: Property) => void;
 }
 
-// Fix default Leaflet marker (runs only on client-side)
-if (typeof window !== "undefined") {
-
-  delete (L.Icon.Default.prototype as any)._getIconUrl;
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-  });
-}
-
 export default function PropertiesMap({ properties, selectedProperty, setSelectedProperty }: PropertiesMapProps) {
+  // Fix default Leaflet marker (runs only on client-side)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // Dynamically import leaflet to avoid SSR issues
+    import("leaflet").then((L) => {
+      delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: () => string })._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+        iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+        shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+      });
+    });
+  }, []);
+
   const defaultMarkerIcon = useMemo(() => createCustomMarker("#4a90e2"), []);
   const selectedMarkerIcon = useMemo(() => createCustomMarker("#e74c3c"), []);
 

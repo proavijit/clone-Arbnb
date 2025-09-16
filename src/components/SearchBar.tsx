@@ -55,7 +55,7 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL;
       }
     };
     fetchAllLocations();
-  }, []);
+  }, [apiUrl]); // <-- add apiUrl here
 
   // Fetch suggestions as user types
   React.useEffect(() => {
@@ -77,7 +77,7 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     }, 400);
 
     return () => clearTimeout(delay);
-  }, [location, allLocations]);
+  }, [location, allLocations, apiUrl]); // <-- add apiUrl here
 
   const handleSearch = async () => {
     if (!location.trim()) return setWarning("Location is required!");
