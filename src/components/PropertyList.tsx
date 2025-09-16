@@ -32,7 +32,7 @@ const PropertyList = () => {
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://arbnb-rest-api-e9ve-lblmr7vw8-avijit-ghoshs-projects.vercel.app";
         const response = await fetch(`${baseUrl}/api/properties`);
 
         if (!response.ok) {

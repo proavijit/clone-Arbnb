@@ -77,7 +77,7 @@ export default function SearchResultsWithMap() {
     };
   }, []);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://arbnb-rest-api-e9ve-lblmr7vw8-avijit-ghoshs-projects.vercel.app"
 
   useEffect(() => {
     if (!mounted) return;

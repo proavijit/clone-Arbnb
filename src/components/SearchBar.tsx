@@ -32,7 +32,7 @@ const SearchBar = () => {
   const [pets, setPets] = React.useState(0);
 
   const [warning, setWarning] = React.useState("");
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://arbnb-rest-api-e9ve-lblmr7vw8-avijit-ghoshs-projects.vercel.app"
   // Increment / Decrement helpers
   const increment = (setter: React.Dispatch<React.SetStateAction<number>>) => setter(prev => prev + 1);
   const decrement = (setter: React.Dispatch<React.SetStateAction<number>>) => setter(prev => (prev > 0 ? prev - 1 : 0));
