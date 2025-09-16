@@ -10,7 +10,10 @@ import { MapPin, Bed, Bath } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import type { LatLngExpression } from "leaflet";
 import Image from "next/image";
- import L from "leaflet";
+
+// Dynamically import Leaflet with a client-side check
+const L = typeof window !== "undefined" ? require("leaflet") : null;
+
 // Dynamically import react-leaflet components (SSR safe)
 const MapContainer = dynamic(() => import("react-leaflet").then((mod) => mod.MapContainer), { ssr: false });
 const TileLayer = dynamic(() => import("react-leaflet").then((mod) => mod.TileLayer), { ssr: false });
@@ -23,7 +26,9 @@ const selectedMarkerSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" he
 
 // Custom marker icon generator (client-only)
 const createCustomMarker = (svg: string) => {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined" || !L) {
+    return null;
+  }
 
   return new L.Icon({
     iconUrl: `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`,
@@ -57,6 +62,8 @@ export default function SearchResultsWithMap() {
 
   useEffect(() => setMounted(true), []);
 
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
   useEffect(() => {
     if (!mounted) return;
     const params = new URLSearchParams(window.location.search);
@@ -76,7 +83,6 @@ export default function SearchResultsWithMap() {
     const fetchResults = async () => {
       setLoading(true);
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
         const payload = {
           location,
           checkIn: checkIn ? new Date(checkIn) : undefined,
@@ -93,12 +99,15 @@ export default function SearchResultsWithMap() {
     };
 
     fetchResults();
-  }, [mounted]);
+  }, [mounted, apiUrl]);
 
+  // Fixes the default marker icon issue with Webpack
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const L = require("leaflet");
-    delete (L.Icon.Default.prototype as any)._getIconUrl;
+    if (typeof window === "undefined" || !L) return;
+    // We can safely cast L.Icon.Default.prototype because we have a client-side check
+    (L.Icon.Default.prototype as any)._getIconUrl = function () {
+      return this.options.iconUrl;
+    };
     L.Icon.Default.mergeOptions({
       iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
       iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
@@ -110,13 +119,17 @@ export default function SearchResultsWithMap() {
   if (loading) return <p className="text-center mt-20 text-gray-600">Loading search results...</p>;
   if (!results.length) return <p className="text-center mt-20 text-gray-600">No properties found.</p>;
 
-  // ✅ Explicitly type mapCenter as LatLngExpression
   const mapCenter: LatLngExpression =
     selectedProperty?.location.coordinates
       ? [selectedProperty.location.coordinates[1], selectedProperty.location.coordinates[0]]
       : results[0]?.location.coordinates
       ? [results[0].location.coordinates[1], results[0].location.coordinates[0]]
       : [23.7916, 90.4079];
+
+  // We check if the icons exist before passing them to the Marker component.
+  if (!defaultMarkerIcon || !selectedMarkerIcon) {
+    return null;
+  }
 
   return (
     <div className="flex flex-col md:flex-row h-screen font-sans">
@@ -135,13 +148,13 @@ export default function SearchResultsWithMap() {
             }}
           >
             <CardContent className="p-0 flex">
-          <Image
-  src={property.images[0] || "https://placehold.co/600x400.png"}
-  alt={property.name}
-  width={160}   // w-40 = 160px
-  height={128}  // h-32 = 128px
-  className="object-cover rounded-l-lg"
-/>
+              <Image
+                src={property.images[0] || "https://placehold.co/600x400.png"}
+                alt={property.name}
+                width={160} // w-40 = 160px
+                height={128} // h-32 = 128px
+                className="object-cover rounded-l-lg"
+              />
               <div className="flex-1 p-4">
                 <CardTitle className="text-base md:text-lg font-semibold truncate">{property.name}</CardTitle>
                 <CardDescription className="text-sm text-gray-500 flex items-center mt-1 space-x-2">
@@ -164,45 +177,47 @@ export default function SearchResultsWithMap() {
       </div>
 
       <div className="md:w-1/2">
-        <MapContainer
-          center={mapCenter}
-          zoom={selectedProperty ? 15 : 12}
-          key={selectedProperty?._id}
-          scrollWheelZoom={true}
-          className="h-full w-full z-0"
-        >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          />
-          {results.map((property) => (
-            <Marker
-              key={property._id}
-              position={[property.location.coordinates[1], property.location.coordinates[0]]}
-              icon={selectedProperty?._id === property._id ? selectedMarkerIcon : defaultMarkerIcon}
-              eventHandlers={{ click: () => setSelectedProperty(property) }}
-            >
-              <Popup>
-                <div className="space-y-1">
-                  <strong className="text-lg font-semibold">{property.name}</strong>
-                  <p className="flex items-center text-sm text-gray-600">
-                    <MapPin size={14} className="mr-1" />
-                    {property.location.name}
-                  </p>
-                  <p className="font-bold text-primary">৳{property.pricePerNight}/night</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-2 w-full"
-                    onClick={() => router.push(`/properties/${property._id}`)}
-                  >
-                    View Details
-                  </Button>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
-        </MapContainer>
+        {mounted && (
+          <MapContainer
+            center={mapCenter}
+            zoom={selectedProperty ? 15 : 12}
+            key={selectedProperty?._id}
+            scrollWheelZoom={true}
+            className="h-full w-full z-0"
+          >
+            <TileLayer
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+            {results.map((property) => (
+              <Marker
+                key={property._id}
+                position={[property.location.coordinates[1], property.location.coordinates[0]]}
+                icon={selectedProperty?._id === property._id ? selectedMarkerIcon : defaultMarkerIcon}
+                eventHandlers={{ click: () => setSelectedProperty(property) }}
+              >
+                <Popup>
+                  <div className="space-y-1">
+                    <strong className="text-lg font-semibold">{property.name}</strong>
+                    <p className="flex items-center text-sm text-gray-600">
+                      <MapPin size={14} className="mr-1" />
+                      {property.location.name}
+                    </p>
+                    <p className="font-bold text-primary">৳{property.pricePerNight}/night</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 w-full"
+                      onClick={() => router.push(`/properties/${property._id}`)}
+                    >
+                      View Details
+                    </Button>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
+        )}
       </div>
     </div>
   );

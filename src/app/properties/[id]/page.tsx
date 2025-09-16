@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
+import Image from "next/image";
 
 // Shadcn UI
 import { Card } from "@/components/ui/card";
@@ -12,8 +13,6 @@ import { Button } from "@/components/ui/button";
 import property1 from "@/assets/property1.jpg";
 import property2 from "@/assets/property2.jpg";
 import property3 from "@/assets/property3.jpg";
-
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 interface Property {
   _id: string;
@@ -34,12 +33,17 @@ export default function PropertyPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
   useEffect(() => {
     if (!id) return;
 
     const fetchProperty = async () => {
       try {
         setLoading(true);
+        if (!apiUrl) {
+          throw new Error("NEXT_PUBLIC_API_URL is not defined");
+        }
         const res = await axios.get(`${apiUrl}/api/properties/${id}`);
         setProperty(res.data);
       } catch (err) {
@@ -51,7 +55,7 @@ export default function PropertyPage() {
     };
 
     fetchProperty();
-  }, [id]);
+  }, [id, apiUrl]);
 
   if (loading)
     return <div className="flex justify-center items-center h-screen text-gray-500">Loading...</div>;
@@ -63,7 +67,7 @@ export default function PropertyPage() {
       </div>
     );
 
-  // ✅ fallback images
+  // Fallback images, extracting src from imported objects
   const fallbackImages = [property1.src, property2.src, property3.src];
 
   return (
@@ -74,11 +78,13 @@ export default function PropertyPage() {
           ? property.images
           : fallbackImages
         ).map((img, idx) => (
-          <img
+          <Image
             key={idx}
             src={img}
             alt={`${property.name} ${idx + 1}`}
             className="w-full h-48 object-cover rounded-lg"
+            width={500}
+            height={300}
           />
         ))}
       </div>

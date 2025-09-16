@@ -11,14 +11,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Heart } from "lucide-react";
+import Image from "next/image";
 
 // Define TypeScript interface for property
 interface Property {
   _id: string;
-  name?: string;
-  images?: string[];
-  location?: { name?: string };
-  pricePerNight?: number;
+  name: string;
+  images: string[];
+  location: { name: string };
+  pricePerNight: number;
   isGuestFavorite?: boolean;
 }
 
@@ -31,8 +32,7 @@ const PropertyList = () => {
   useEffect(() => {
     const fetchProperties = async () => {
       try {
-        const baseUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
         const response = await fetch(`${baseUrl}/api/properties`);
 
         if (!response.ok) {
@@ -94,13 +94,12 @@ const PropertyList = () => {
             aria-labelledby={`property-title-${property._id}`}
           >
             <div className="relative">
-              <img
-                src={property.images?.[0] || "/placeholder-image.jpg"}
+              <Image
+                src={property.images[0] || "/placeholder-image.jpg"}
                 alt={property.name || "Property image"}
+                width={500}
+                height={300}
                 className="w-full h-48 object-cover"
-                onError={(e) =>
-                  (e.currentTarget.src = "/placeholder-image.jpg")
-                }
               />
               <div className="absolute top-2 right-2">
                 <Button
@@ -134,15 +133,15 @@ const PropertyList = () => {
                 id={`property-title-${property._id}`}
                 className="text-lg font-semibold truncate"
               >
-                {property.name || "Unnamed Property"}
+                {property.name}
               </CardTitle>
               <CardDescription className="text-sm text-gray-500">
-                {property.location?.name || "Unknown Location"}
+                {property.location.name}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <p className="text-base font-bold">
-                ${property.pricePerNight || "N/A"}{" "}
+                ${property.pricePerNight}{" "}
                 <span className="font-normal text-gray-500">per night</span>
               </p>
             </CardContent>
